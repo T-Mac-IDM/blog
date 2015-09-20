@@ -18,20 +18,18 @@
   <p>这里是所以递减，是因为比如，现在考虑第n个物品的放与不放，那么我们考虑的dp[m-W[i]]一定是表示只考虑前n-1个物品且空间为m-W[i]时的最优值。倘若我们从0开始递增，则dp[m-W[i]]表示的是考虑了第n个物品且空间为m-W[i]的情况下最优值，不符合我们的题意，因为第n个物品只有一个</p>
   
   <p>或者直接开一个二维的dp数组，dp[n][m]维护把前n个物品放在考虑内，且总空间为m下的最优值。也就是说每次对于第n个物品，我们首先看当前的空间能不能放下n物品，如果能放下，则考虑放这个物品 和 不放这个物品 哪个值最优</p>
-</blockquote></div><div id="wmd-preview-section-793" class="wmd-preview-section preview-content">
+</blockquote></div><div id="wmd-preview-section-898" class="wmd-preview-section preview-content">
 
 <h3 id="infinite-knapsack-problem">Infinite-Knapsack-Problem</h3>
 
-<p><code>problem detail：POJ 1384 My AC code</code></p>
-
 <blockquote>
+  <p><code>problem detail</code>：<a href="http://poj.org/problem?id=1384" target="_blank">POJ_1384</a>  | <a href="http://t-mac-idm.github.io/blog/dp/1384.c" target="_blank">My_AC_code</a></p>
+  
   <p>所谓完全背包是指，每个物品的数目不在只有1个，而是有无限个。其他要求与01背包相同</p>
   
   <p>和上面的一维数组版本的01背包相比，我们迅速想出了完全背包的解法，即，对于考虑第n个物品的时候，内层循环从0开始，这样做之后，意味着考虑第n个物品的时候，我们使用的dp[C-W[i]]已经是考虑了第n个物品了。因为我们是小到大更新的嘛~</p>
   
   <p>另外需要注意的是,这题求的最优值是求小，而不是像上一题求大。考虑之后，发现，其实我们只要注意初始化就可以了。初始化的时候，把dp数组值初始化比题目可能达到的最大值还要大。另外注意，由于dp[0]表示无法放入任何东西，所以，dp[0]要初始化为0。这样搞了之后，题目中要的impossible的情况就对应于，循环之后，dp[C]的值还是一开始初始化的那个，没有变化，说明怎么组合物品都更新不到</p>
-</blockquote>
-
-</div><div id="wmd-preview-section-794" class="wmd-preview-section preview-content">
+</blockquote></div><div id="wmd-preview-section-794" class="wmd-preview-section preview-content">
 
 <h3 id="binary-tuning-01-knapsack-problem">Binary-Tuning-01-Knapsack-Problem</h3></div><div id="wmd-preview-section-footnotes" class="preview-content"></div></div></body></html>
