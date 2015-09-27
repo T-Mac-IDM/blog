@@ -1,0 +1,133 @@
+<!DOCTYPE html><html><head><title>works in Baidu</title><meta charset='utf-8'><link href='https://dn-maxiang.qbox.me/res-min/themes/marxico.css' rel='stylesheet'></head><body><div id='preview-contents' class='note-content'>
+                        <div id="wmd-preview" class="preview-content"></div>
+                    <div id="wmd-preview-section-4392" class="wmd-preview-section preview-content">
+
+</div><div id="wmd-preview-section-4393" class="wmd-preview-section preview-content">
+
+<h1 id="works-in-baidu">works in Baidu</h1>
+
+<div><div class="toc"><div class="toc">
+<ul>
+<li><a href="#works-in-baidu">works in Baidu</a><ul>
+<li><a href="#学术搜索-xueshubaiducom">学术搜索 <xueshu.baidu.com></xueshu.baidu.com></a><ul>
+<li><a href="#统计日志相关">统计日志相关</a></li>
+<li><a href="#mapreduce相关">MapReduce相关</a></li>
+</ul>
+</li>
+<li><a href="#appsearch">AppSearch</a><ul>
+<li><a href="#app内容通用抓取">app内容通用抓取</a></li>
+<li><a href="#特定app破解抓取">特定app破解抓取</a></li>
+<li><a href="#检索端ac模块接手">检索端AC模块接手</a></li>
+<li><a href="#app-deeplink静态分析">app deeplink静态分析</a></li>
+</ul>
+</li>
+<li><a href="#度秘">度秘</a><ul>
+<li><a href="#virtualbox-相关">virtualbox 相关</a></li>
+<li><a href="#rdesktop-代码架构">rdesktop 代码架构</a></li>
+<li><a href="#rdp-client增强解决remote-clip-paste-和-remote-中文输入法">rdp client增强&lt;解决remote clip &amp; paste 和 remote 中文输入法&gt;</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+</div><div id="wmd-preview-section-4394" class="wmd-preview-section preview-content">
+
+<h2 id="学术搜索-xueshubaiducom">学术搜索 &lt;xueshu.baidu.com&gt;</h2>
+
+<p><code>2014.7 ~ 2015.5</code></p>
+
+</div><div id="wmd-preview-section-4395" class="wmd-preview-section preview-content">
+
+<h3 id="统计日志相关">统计日志相关</h3>
+
+<p><code>2014.7 ~ 2014.8</code></p>
+
+<blockquote>
+  <p>2014.7，大三暑假，偶然接到学长邀请，随便准备了3天，经过2轮电话面试，结果异常顺利通过。于是来到北京海淀区的上地十街的百度大厦实习。</p>
+</blockquote>
+
+<p><code>首先统计日志是什么呢？</code>统计日志典型的指标有PV，UA，CLK，以及点展比等，PV是指page view，即是页面的展现量，CLK是指某个按钮的点击次数，UA指user agent，指该产品的用户活跃度等相关统计，比如，隔日活跃度的UA数目。点展比的意思就是一个控件的 点击数/展示数，可以看出来这个控件的效率。</p>
+
+<p><code>统计的数据是怎么样生成的呢？</code>其实是这样的，每次页面被展现或者用户点击了某个button后，除了正常的业务逻辑请求的http接口，还会去请求一个并不存在的gif文件，这个请求里会带上一系列的用户UA信息和用户行为信息。服务器收到这个请求就会把相应的信息存起来。这些信息就是最原始的用来统计的原始数据。</p>
+
+<p><code>如何存储统计数据？</code>由上一小节我们知道原始的统计数据是如何生成的了。但是，应该考虑到的是，比如百度一日的PV值在30亿次左右，如果每次展现的时候，会发送多个日志，用于统计不同的方向。这个原始日志的数据量将是<code>庞大的</code>！所以，需要根据原始数据的类型，<code>分类</code>进行存储，由于文件集合很大，所以我们采用分布式文件系统来进行存储，比如<code>HDFS</code>。所以，这些原始的统计数据都被存储成了HDFS上的文件。</p>
+
+<p><code>直接使用mapReduce来统计，以PV值为例</code>我们知道面对HDFS上的超大数据文件，我们单机来跑是无法在可接受的时间内完成的。所以，要采用分布式计算模型来处理，比如，使用MapReduce。比如，统计百度学术的PV值，我们可以通过MapReduce直接把一份超大的日志文件切分后发给N多个map来处理，然后，map的逻辑也比较简单，那就是有一个计数器，从0开始，要知道日志文件中，每一行代表发送的某一次请求。我们map中就每次遇到一行，就根据一些字段挑选出百度学术的日志，然后，判断这条日志是学术的点击日志还是展现日志，如果展现日志的话，计数器加1，最后每个map在读取到EOF的时候，输出计数器的值。reduce的逻辑就更加简单啦，直接将每个map的值都读进来，然后加起来，就得出了整体百度学术的PV值啦。</p>
+
+<p><code>写Mapreduce直接来统计太麻烦？</code>通过上面发现，每一个统计指标，我们都要写一个mapreduce来完成。这个将是个庞大的工作量，因为PM一般会有几十个统计指标，这就对应上百个mapreduce相关的脚本。上百个mapreduce的脚本维护的成本也太高，常常会是忘了每个脚本对应哪个统计项。</p>
+
+<p><code>Hive神器！</code>hive就是这样的一个东西，提供类似sql的接口，然后实际执行的时候转化为mapreduce脚本来执行。通过hive，我们可以像写sql一样把hdfs上的数据建表，然后，写各种select或者复杂查询来满足PM的统计需求。各级数据建表，每个表有一些定时的任务，比如，从上游大表中挑选出自己小表的日志等。然后，各个产品线，通过自己建立自己的小表来存储自己的日志文件，然后，编写hive脚本来完成统计工作。</p>
+
+<p><code>备注1</code>hive虽然比较好用，但是满足不了一些复杂的离线数据挖掘的需求，所以，我当时都是将日志dump一份儿离线HDFS来提供离线数据挖掘。</p>
+
+<p><code>备注2</code>如果，我们想要按来源统计页面的PV值，网页中每次展现其实http头中都有一个referer的字段，这个字段就是表明当前展现页面的前导页是什么，这个同样会出现在日志中。所以，日志文件其实是需要多次merge生成的。merge当然也可以使用mapReduce实现，但是用hive的连接操作更加简单，不过，这种操作都是比较重的操作，需要map分key，利用shuffle排序的特性，最后在reduce实现，一般会比较慢。h</p>
+
+</div><div id="wmd-preview-section-4396" class="wmd-preview-section preview-content">
+
+<h3 id="mapreduce相关">MapReduce相关</h3>
+
+<p><code>2014.8 ~ 2015.5</code></p>
+
+<blockquote>
+  <p>花了一周时间完成了统计工作之后</p>
+</blockquote>
+
+<p><code>引入第三方资源</code>， 引入第三方资源是个不折不扣的体力活儿，第三方提供的数据格式各种各样，所以，需要大量的各种各样的转格式和merge数据的脚本。一开始使用python编写各种各样的转格式和merge的脚本。后来发现，其实除了merge数据以外，大部分数据的预处理，清洗或者转格式都是以行为中心的。</p>
+
+<p><code>AWK one-linear</code>由上一节的最后，我们的需求是一种，快速的行处理的脚本。发现awk这个脚本语言特别适合。关于awk脚本语言的入门，我的学习方法是看了<a href="http://www.catonmat.net/blog/awk-one-liners-explained-part-one/" target="_blank">awk one-linear explained by  Peteris Krumins </a>，一边看一边实验。我记得一共只有100个例子，几天就看完了。看完之后，你发现很多mapReduce脚本，你根本不想去用python写，因为用awk一句话就搞定了。比如，数据去重，如果使用python写，我们需要在reduce写一段逻辑，大概就是从上往下依次读取，然后，维护几个变量记录一下，当前的状态，最后达到相同的只输出一条结果。但是，如果使用awk来写，只要reduce的逻辑用一句话就能实现——<code>cat - | awk '!a[$0]++'</code></p>
+
+<p><code>引文数据初期建设——数据归一问题</code>在引入第三方资源之后，接到的下一个任务就是建设引文资源。详细细节这里就不描述了。问题大体上主要集中于数据的归一化上，因为哪篇文章引用了哪篇文章，需要根据文章信息进行对应，但是数据中存在杂质，作者等字段写法不一等都会导致无法对应上。体现在mapReduce上就是map输出的结果的key的问题上。</p>
+
+<p><code>质朴的归一</code>一开始，我在map中的逻辑大体上写成了使用很多的去杂质的策略，力争把一些可见的杂质去除干净。但是这种写法，很快就发现了很多问题。我可以通过抽取没有匹配上的数据，实际去数据里面找一找，看看是不是应该匹配上。发现总是存在没有见过的杂质存在，导致这种方法虽然准确率很高，但是召回率很低。</p>
+
+<p><code>灵活的分key策略</code> <br>
+<code>PDF数据建设</code></p>
+
+<blockquote>
+  <p>以上两个部分参见我本科的答辩论文 <a href="http://t-mac-idm.github.io/blog/works/%E5%AD%A6%E6%9C%AF%E8%AE%BA%E6%96%87PDF%E5%85%A8%E6%96%87%E4%BF%A1%E6%81%AF%E6%8C%96%E6%8E%98.pdf" target="_blank">学术论文PDF全文信息挖掘.pdf</a></p>
+</blockquote>
+
+</div><div id="wmd-preview-section-4397" class="wmd-preview-section preview-content">
+
+<h2 id="appsearch">AppSearch</h2>
+
+<p><code>2015.7 ~ 2015.9</code></p>
+
+</div><div id="wmd-preview-section-4398" class="wmd-preview-section preview-content">
+
+<h3 id="app内容通用抓取">app内容通用抓取</h3>
+
+<p><code>收录app内容困难？</code>App内容和网页内容不同，网页相当于一张超大的图，链接是图中的边，基本上所有的点都有边。而App更像一个一个孤岛，不同app之间的链接很弱，所以，要想收录所有app的内容跟收录网页内容是完全不同的两件事。网页的spider并不适用于收录app内容！ <br>
+<code>google是怎么做的呢？</code>首先来说，作为android老爸的google是怎么来做这件事情的。</p>
+
+</div><div id="wmd-preview-section-4399" class="wmd-preview-section preview-content">
+
+<h3 id="特定app破解抓取">特定app破解抓取</h3>
+
+</div><div id="wmd-preview-section-4400" class="wmd-preview-section preview-content">
+
+<h3 id="检索端ac模块接手">检索端AC模块接手</h3>
+
+</div><div id="wmd-preview-section-4401" class="wmd-preview-section preview-content">
+
+<h3 id="app-deeplink静态分析">app deeplink静态分析</h3>
+
+</div><div id="wmd-preview-section-4402" class="wmd-preview-section preview-content">
+
+<h2 id="度秘">度秘</h2>
+
+</div><div id="wmd-preview-section-4403" class="wmd-preview-section preview-content">
+
+<h3 id="virtualbox-相关">virtualbox 相关</h3>
+
+</div><div id="wmd-preview-section-4404" class="wmd-preview-section preview-content">
+
+<h3 id="rdesktop-代码架构">rdesktop 代码架构</h3>
+
+</div><div id="wmd-preview-section-4405" class="wmd-preview-section preview-content">
+
+<h3 id="rdp-client增强解决remote-clip-paste-和-remote-中文输入法">rdp client增强&lt;解决remote clip &amp; paste 和 remote 中文输入法&gt;</h3></div><div id="wmd-preview-section-footnotes" class="preview-content"></div></div></body></html>
